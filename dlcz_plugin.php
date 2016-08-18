@@ -9,6 +9,12 @@ Author: Candice Dela Cruz
 Author URI: http://phoenix.sheridanc.on.ca 
 */
 
+//to style the shortcodes and the widget
+function my_plugin_styles(){
+	wp_enqueue_style('plugin-style', plugins_url('css/style.css',__FILE__));
+}
+
+add_action('wp_enqueue_scripts','my_plugin_styles');
 
 /*
 * Creating Testimony Custom Post Type, reference from https://codex.wordpress.org/Post_Types 
@@ -79,3 +85,62 @@ function add_my_post_types_to_query( $query ) {
     $query->set( 'post_type', array( 'post', 'page', 'testimony' ) );
   return $query;
 }
+
+//create the function that lets shortcodes display social media icons
+
+		function socialmedia($atts)
+		{
+			
+			extract(shortcode_atts(
+				array(
+					'fb_link' => 'https://www.facebook.com/',
+					'linkedin_link' => 'https://www.linkedin.com/',
+					'googleplus_link' => 'http://plus.google.com/',
+					'twitter_link' => 'https://www.twitter.com/',
+					'label' => 'Get in Touch!',
+					'iconcolor' => '#3fb0ac',
+					'iconhover' => '#c08829',
+					'size' =>	'1.5em',
+					'labelcolor' => '#23282d',
+				), $atts
+			));
+			return 
+			'<head>
+				<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+				
+				<style>
+					i.fa.fa-twitter:hover, i.fa.fa-facebook:hover, i.fa.fa-linkedin:hover, i.fa.fa-google-plus:hover 
+					{
+						color: '.$iconhover.';
+					}
+					
+					i.fa.fa-twitter, i.fa.fa-facebook, i.fa.fa-linkedin, i.fa.fa-google-plus 
+					{
+						font-size: '.$size.';
+						color: '.$iconcolor.';
+					}
+					
+					.smedia h2
+					{
+						color: '.$labelcolor.';
+					}
+				</style>
+			</head>
+			<body>
+			<div class="smedia">
+				<h2>'.$label.'</h2>
+					<ul class="smedia_icons">
+						<li><a href="'.$fb_link.'"><i class="fa fa-facebook"></i></a></li>
+						<li><a href="'.$linkedin_link.'"><i class="fa fa-linkedin"></i></a></li>
+						<li><a href="'.$twitter_link.'"><i class="fa fa-twitter"></i></a></li>
+						<li><a href="'.$googleplus_link.'"><i class="fa fa-google-plus"></i></a></li>
+					</ul>
+			</div>
+			<body>';
+		}
+		
+		add_shortcode('socialmedia','socialmedia');
+		
+/*Create a widget
+
+

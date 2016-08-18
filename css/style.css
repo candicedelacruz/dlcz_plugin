@@ -1,0 +1,19 @@
+
+/*Shortcodes- styling the social media icons*/
+ul.smedia_icons li
+{
+	list-style-type: none;
+	display: inline-block;
+	margin: 1em !important;
+}
+
+ul.smedia_icons
+{
+	text-align: center;
+}
+.smedia h2
+{
+	text-transform: uppercase;
+	letter-spacing: 2px;
+	text-align: center;
+}
