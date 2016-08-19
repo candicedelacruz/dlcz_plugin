@@ -16,17 +16,116 @@ function my_plugin_styles(){
 
 add_action('wp_enqueue_scripts','my_plugin_styles');
 
+
+//the widget begins--references from https://premium.wpmudev.org/blog/how-to-build-wordpress-widgets-like-a-pro/ and https://codex.wordpress.org/Widgets_API
+
+add_action( 'widgets_init', 'my_widget_init' );
+ 
+function my_widget_init() {
+    register_widget( 'Dlcz_Widget' );
+}
+/* Adds the widget to the website*/
+class Dlcz_Widget extends WP_Widget {
+	/**
+	 * Register widget with WordPress.
+	 */
+	public function __construct() {
+		parent::__construct(
+			'Dlcz_Widget', // Base ID
+			__('DLCZ', 'delacruz'), // Name
+			array('description' => __( 'DLCZ creates a plugin that lets you add testimony that endorses you. This plugin also creates
+										a shortcode that creates social media icons for you. See the README file attached to the DLCZ plugin folder', 'delacruz' ),) // Args
+		);
+	}
+	
+/*Front-end display of widget is created*/
+	public function widget( $args, $instance ) {
+		
+		echo '<h2 class="widget-title">Testimony</h2>';
+		
+		// get the excerpt of the required testimony, reference from https://codex.wordpress.org/Post_Types#Querying_by_Post_Type
+		$args = array( 'post_type' => 'testimony', 'posts_per_page' => 1 );
+		$loop = new WP_Query( $args );
+		
+		while ( $loop->have_posts() ) : $loop->the_post();
+		  echo '<section id="Twidget">';
+			  echo'<h3>';
+			  the_title();
+			  echo'</h3>';
+				the_post_thumbnail();
+			  echo '<div class="entry-content">';
+			  the_content();
+			  echo '</div>';
+		  echo '</section>';
+		endwhile;
+			
+		if ( array_key_exists('after_widget', $args) ) echo $args['after_widget'];
+	}
+	/**
+	 * Back-end widget form*/
+	public function form( $instance ) {
+		
+		if ( isset( $instance[ 'testimony_id' ] ) ) {
+			$testimony_id = $instance[ 'testimony_id' ];
+		}
+		else {
+			$testimony_id = 0;
+		}
+		?>
+		
+		<p>
+			<label for="<?php echo $this->get_field_id( 'testimony_id' ); ?>"><?php _e( 'testimony:' ); ?></label> 
+			
+			<select id="<?php echo $this->get_field_id( 'testimony_id' ); ?>" name="<?php echo $this->get_field_name( 'testimony_id' ); ?>">
+				<option value="0">Most recent</option> 
+		<?php 
+		// get the exceprt of the most recent testimony
+		$gp_args = array(
+			'posts_per_page' => -1,
+			'post_type' => 'testimony',
+			'orderby' => 'post_date',
+			'order' => 'desc',
+			'post_status' => 'publish'
+		);
+		
+		$posts = get_posts( $gp_args );
+			foreach( $posts as $post ) {
+			
+				$selected = ( $post->ID == $testimony_id ) ? 'selected' : ''; 
+				
+				if ( strlen($post->post_title) > 30 ) {
+					$title = substr($post->post_title, 0, 27) . '...';
+				} else {
+					$title = $post->post_title;
+				}
+				echo '<option value="' . $post->ID . '" ' . $selected . '>' . $title . '</option>';
+			}
+		?>
+			</select>
+		</p>
+		<?php 
+	}
+	public function update( $new_instance, $old_instance ) {
+		
+		$instance = array();
+		$instance['testimony_id'] = ( ! empty( $new_instance['testimony_id'] ) ) ? strip_tags( $new_instance['testimony_id'] ) : '';
+		return $instance;
+	}
+} // class My_Widget
+
+
+
 /*
 * Creating Testimony Custom Post Type, reference from https://codex.wordpress.org/Post_Types 
 *	and http://www.wpbeginner.com/wp-tutorials/how-to-create-custom-post-types-in-wordpress/
 */
-
+//custom post type addition
 function testimony() {
 
 // labels for the testimony custom Post Type
 	$labels = array(
-		'name'                => _x( 'Testimony', 'Post Type General Name', 'delacruz' ),
-		'singular_name'       => _x( 'Testimony', 'Post Type Singular Name', 'delacruz' ),
+		'name'                => __( 'Testimony', 'Post Type General Name', 'delacruz' ),
+		'singular_name'       => __( 'Testimony', 'Post Type Singular Name', 'delacruz' ),
 		'menu_name'           => __( 'Testimony', 'delacruz' ),
 		'parent_item_colon'   => __( 'Parent Testimony', 'delacruz' ),
 		'all_items'           => __( 'All Testimonies', 'delacruz' ),
@@ -40,18 +139,14 @@ function testimony() {
 		'not_found_in_trash'  => __( 'No Testimony found in Trash', 'delacruz' ),
 	);
 	
-// various options for Custom Post Type
+// various options for Custom Post Type that shows when the user edits the custom post type. Reference from http://www.wpbeginner.com/wp-tutorials/how-to-create-custom-post-types-in-wordpress/
 	
 	$args = array(
 		'label'               => __( 'testimony', 'delacruz' ),
 		'description'         => __( 'Display testimony and recognition from colleagues and co-workers', 'delacruz' ),
 		'labels'              => $labels,
 		// Features this CPT supports in Post Editor
-		'supports'            => array( 'title', 'editor', 'excerpt', 'author', 'thumbnail', 'comments', 'revisions', 'custom-fields', 'page-attributes', ),
-		/* A hierarchical CPT is like Pages and can have
-		* Parent and child items. A non-hierarchical CPT
-		* is like Posts.
-		*/	
+		'supports'            => array( 'title', 'editor','thumbnail', 'comments', 'revisions', ),
 		'hierarchical'        => false,
 		'public'              => true,
 		'show_ui'             => true,
@@ -70,11 +165,6 @@ function testimony() {
 	register_post_type( 'testimony', $args );
 }
 
-/* Hook into the 'init' action so that the function
-* Containing our post type registration is not 
-* unnecessarily executed. 
-*/
-
 add_action( 'init', 'testimony', 0 );
 
 // Show posts of 'post', 'page' and 'movie' post types on home page
@@ -86,11 +176,11 @@ function add_my_post_types_to_query( $query ) {
   return $query;
 }
 
-//create the function that lets shortcodes display social media icons
+//create the function that lets shortcodes display social media icons, reference from lab 4 assignment
 
 		function socialmedia($atts)
 		{
-			
+			//shortcode attributes that the user will use to customize the shortcode
 			extract(shortcode_atts(
 				array(
 					'fb_link' => 'https://www.facebook.com/',
